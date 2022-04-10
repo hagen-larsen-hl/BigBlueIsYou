@@ -7,7 +7,7 @@ namespace CS5410
         [STAThread]
         static void Main()
         {
-            using (var game = new Assignment())
+            using (var game = new BigBlueIsYou())
             {
                 game.Run();
             }
