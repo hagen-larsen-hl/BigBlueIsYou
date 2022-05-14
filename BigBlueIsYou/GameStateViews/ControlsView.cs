@@ -4,6 +4,7 @@ using System.IO.IsolatedStorage;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using centipede.Content.Input;
+using CS5410.Objects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -20,7 +21,7 @@ namespace CS5410
         private bool enterPressed;
         private KeyboardInput m_controlsInputHandler;
         private GameStateEnum m_gameState = GameStateEnum.Help;
-        private Objects.Controls m_keyboardLayout = new Objects.Controls();
+        private Controls m_keyboardLayout = new Controls();
 
         private enum Selection
         {
@@ -28,7 +29,7 @@ namespace CS5410
             Down,
             Right,
             Left,
-            Fire
+            Reset
         }
 
         private Selection m_currentSelection = Selection.Up;
@@ -46,30 +47,29 @@ namespace CS5410
 
             enterPressed = true;
 
+            m_keyboardLayout = new Controls();
+            m_keyboardLayout.Up = Keys.W;
+            m_keyboardLayout.Down = Keys.S;
+            m_keyboardLayout.Right = Keys.D;
+            m_keyboardLayout.Left = Keys.A;
+            m_keyboardLayout.Reset = Keys.R;
+            
             loadLayout();
         }
-
-        public override void loadContent(ContentManager contentManager)
-        {
-            m_font = contentManager.Load<SpriteFont>("Fonts/Font");
-        }
         
-        /// <summary>
-        /// Demonstrates how serialize an object to storage
-        /// </summary>
-        private void saveLayout(Objects.Controls layout)
+        private void saveLayout(Controls layout)
         {
             lock (this)
             {
                 if (!this.saving)
                 {
                     this.saving = true;
-                    saveLayoutAsync(layout);
+                    finalizeSaveAsync(layout);
                 }
             }
         }
         
-        private async void saveLayoutAsync(Objects.Controls layout)
+        private async void finalizeSaveAsync(Controls layout)
         {
             await Task.Run(() =>
             {
@@ -81,7 +81,7 @@ namespace CS5410
                         {
                             if (fs != null)
                             {
-                                XmlSerializer mySerializer = new XmlSerializer(typeof(Objects.Controls));
+                                XmlSerializer mySerializer = new XmlSerializer(typeof(Controls));
                                 mySerializer.Serialize(fs, layout);
                             }
                         }
@@ -124,19 +124,19 @@ namespace CS5410
                             {
                                 if (fs != null)
                                 {
-                                    XmlSerializer mySerializer = new XmlSerializer(typeof(Objects.Controls));
-                                    m_keyboardLayout = (Objects.Controls)mySerializer.Deserialize(fs);
+                                    XmlSerializer mySerializer = new XmlSerializer(typeof(Controls));
+                                    m_keyboardLayout = (Controls)mySerializer.Deserialize(fs);
                                 }
                             }
                         }
                         else
                         {
-                            m_keyboardLayout = new Objects.Controls();
-                            m_keyboardLayout.Up = Keys.Up;
-                            m_keyboardLayout.Down = Keys.Down;
-                            m_keyboardLayout.Left = Keys.Left;
-                            m_keyboardLayout.Right = Keys.Right;
-                            m_keyboardLayout.Fire = Keys.Space;
+                            m_keyboardLayout = new Controls();
+                            m_keyboardLayout.Up = Keys.W;
+                            m_keyboardLayout.Down = Keys.S;
+                            m_keyboardLayout.Right = Keys.D;
+                            m_keyboardLayout.Left = Keys.A;
+                            m_keyboardLayout.Reset = Keys.R;
                         }
                     }
                     catch (IsolatedStorageException)
@@ -144,8 +144,14 @@ namespace CS5410
                         // Ideally show something to the user, but this is demo code :)
                     }
                 }
+
                 this.loading = false;
             });
+        }
+
+        public override void loadContent(ContentManager contentManager)
+        {
+            m_font = contentManager.Load<SpriteFont>("Fonts/Font");
         }
 
         public override GameStateEnum processInput(GameTime gameTime)
@@ -185,11 +191,10 @@ namespace CS5410
                 {
                     m_keyboardLayout.Left = key;
                 }
-                if (m_currentSelection == Selection.Fire)
+                if (m_currentSelection == Selection.Reset)
                 {
-                    m_keyboardLayout.Fire = key;
+                    m_keyboardLayout.Reset = key;
                 }
-                Console.Write("Saving" + m_keyboardLayout.Fire);
                 saveLayout(m_keyboardLayout);
                 awaitKey = false;
             }
@@ -199,7 +204,7 @@ namespace CS5410
 
         private void navigateUp(GameTime gameTime)
         {
-            if (!awaitKey)
+            if (!awaitKey && m_currentSelection != Selection.Up)
             {
                 m_currentSelection -= 1;
             }
@@ -207,7 +212,7 @@ namespace CS5410
 
         private void navigateDown(GameTime gameTime)
         {
-            if (!awaitKey)
+            if (!awaitKey && m_currentSelection != Selection.Reset)
             {
                 m_currentSelection += 1;
             }
@@ -242,12 +247,11 @@ namespace CS5410
             else
             {
                 float bottom = (float) (m_graphics.PreferredBackBufferHeight * 0.2);
-                bottom = drawMenuItem(m_font,"Move Up: " + m_keyboardLayout.Up, bottom, m_currentSelection == Selection.Up ? Color.SkyBlue : Color.Blue);
-                bottom = drawMenuItem(m_font, "Move Down: " + m_keyboardLayout.Down, bottom, m_currentSelection == Selection.Down ? Color.SkyBlue : Color.Blue);
-                bottom = drawMenuItem(m_font, "Move Right: " + m_keyboardLayout.Right, bottom, m_currentSelection == Selection.Right ? Color.SkyBlue : Color.Blue);
-                bottom = drawMenuItem(m_font, "Move Left: " + m_keyboardLayout.Left, bottom, m_currentSelection == Selection.Left ? Color.SkyBlue : Color.Blue);
-                drawMenuItem(m_font, "Fire: " + m_keyboardLayout.Fire, bottom, m_currentSelection == Selection.Fire ? Color.SkyBlue : Color.Blue);
-
+                bottom = drawMenuItem(m_font,"Move Up: " + m_keyboardLayout.Up, bottom, m_currentSelection == Selection.Up ? Color.LimeGreen : Color.Green);
+                bottom = drawMenuItem(m_font, "Move Down: " + m_keyboardLayout.Down, bottom, m_currentSelection == Selection.Down ? Color.LimeGreen : Color.Green);
+                bottom = drawMenuItem(m_font, "Move Right: " + m_keyboardLayout.Right, bottom, m_currentSelection == Selection.Right ? Color.LimeGreen : Color.Green);
+                bottom = drawMenuItem(m_font, "Move Left: " + m_keyboardLayout.Left, bottom, m_currentSelection == Selection.Left ? Color.LimeGreen : Color.Green);
+                bottom = drawMenuItem(m_font, "Reset Level: " + m_keyboardLayout.Reset, bottom, m_currentSelection == Selection.Reset ? Color.LimeGreen : Color.Green);
             }
             m_spriteBatch.End();
         }

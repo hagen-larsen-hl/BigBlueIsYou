@@ -1,8 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.IsolatedStorage;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
+using CS5410.Objects;
+using Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -18,6 +22,8 @@ namespace CS5410
         private bool saving;
         private bool loading;
         private Objects.Controls m_keyboardLayout;
+
+        private List<Level> m_levels = new List<Level>();
 
         public BigBlueIsYou()
         {
@@ -38,12 +44,13 @@ namespace CS5410
             // Create all the game states here
             m_states = new Dictionary<GameStateEnum, IGameState>();
             m_states.Add(GameStateEnum.MainMenu, new MainMenuView());
-            m_states.Add(GameStateEnum.GamePlay, new GamePlayView());
+            m_states.Add(GameStateEnum.GamePlay, new GameView());
             m_states.Add(GameStateEnum.Help, new ControlsView());
             m_states.Add(GameStateEnum.About, new CreditsView());
             
-            // Load default game controls
+            // Load data
             loadLayout();
+            readLevels();
 
             // We are starting with the main menu
             m_currentState = m_states[GameStateEnum.MainMenu];
@@ -131,7 +138,6 @@ namespace CS5410
                             m_keyboardLayout.Down = Keys.Down;
                             m_keyboardLayout.Left = Keys.Left;
                             m_keyboardLayout.Right = Keys.Right;
-                            m_keyboardLayout.Fire = Keys.Space;
                         }
                     }
                     catch (IsolatedStorageException)
@@ -141,6 +147,80 @@ namespace CS5410
                 }
                 saveLayout(m_keyboardLayout);
                 this.loading = false;
+            });
+        }
+        
+        private void readLevels()
+        {
+            IEnumerable<string> lines = File.ReadLines("Content/levels-all.bbiy");
+            IEnumerator<string> lineEnum = lines.GetEnumerator();
+            while (lineEnum.MoveNext())
+            {
+                Level level = new Level();
+                level.Name = lineEnum.Current;
+                lineEnum.MoveNext();
+                level.Width = Int32.Parse(lineEnum.Current.Split("x")[0]);
+                level.Height = Int32.Parse(lineEnum.Current.Split("x")[1]);
+                lineEnum.MoveNext();
+                int row = 0;
+                List<KeyValuePair<char,Vector2>> entities = new List<KeyValuePair<char, Vector2>>();
+                while (row < (2 * level.Height) - 1)
+                {
+                    int col = 0;
+                    foreach (char c in lineEnum.Current)
+                    {
+                        if (c != ' ')
+                        {
+                            entities.Add(new KeyValuePair<char, Vector2>(c, new Vector2(col, row % level.Height)));
+                        }
+                        col++;
+                    }
+                    lineEnum.MoveNext();
+                    row++;
+                }
+                level.Entities = entities;
+                m_levels.Add(level);
+            }
+            saveLevels(m_levels);
+        }
+        
+        private void saveLevels(List<Level> levels)
+        {
+            lock (this)
+            {
+                if (!this.saving)
+                {
+                    this.saving = true;
+                    //
+                    finalizeSaveLevelsAsync(levels);
+                }
+            }
+        }
+        
+        private async void finalizeSaveLevelsAsync(List<Level> levels)
+        {
+            await Task.Run(() =>
+            {
+                using (IsolatedStorageFile storage = IsolatedStorageFile.GetUserStoreForApplication())
+                {
+                    try
+                    {
+                        using (IsolatedStorageFileStream fs = storage.OpenFile("levels.xml", FileMode.Create))
+                        {
+                            if (fs != null)
+                            {
+                                XmlSerializer mySerializer = new XmlSerializer(typeof(List<Level>));
+                                mySerializer.Serialize(fs, levels);
+                            }
+                        }
+                    }
+                    catch (IsolatedStorageException)
+                    {
+                        // Ideally show something to the user, but this is demo code :)
+                    }
+                }
+
+                this.saving = false;
             });
         }
 
@@ -168,6 +248,7 @@ namespace CS5410
             else if (m_currentState != m_states[m_nextStateEnum])
             {
                 m_states[m_nextStateEnum].initialize(GraphicsDevice, m_graphics);
+                m_states[m_nextStateEnum].loadContent(Content);
             }
 
             m_currentState.update(gameTime);

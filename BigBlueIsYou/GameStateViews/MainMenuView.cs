@@ -3,6 +3,7 @@ using System.IO.IsolatedStorage;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using centipede.Content.Input;
+using CS5410.Objects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;

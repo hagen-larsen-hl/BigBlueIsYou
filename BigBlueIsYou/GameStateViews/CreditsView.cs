@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using CS5410.Objects;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -40,7 +41,6 @@ namespace CS5410
             bottom = drawMenuItem(m_font,"GAMEPLAY", bottom, Color.Green);
             bottom = drawMenuItem(m_font, "Hagen Larsen", bottom, Color.LimeGreen);
             bottom = drawMenuItem(m_font, "IMAGES", bottom, Color.Green);
-            bottom = drawMenuItem(m_font, "Hagen Larsen", bottom, Color.LimeGreen);
             bottom = drawMenuItem(m_font, "Spriter's Resource", bottom, Color.LimeGreen);
             bottom = drawMenuItem(m_font, "SOUND", bottom, Color.Green);
             bottom = drawMenuItem(m_font, "freesound.org", bottom, Color.LimeGreen);
