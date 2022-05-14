@@ -8,8 +8,7 @@ This version was developed in C# using the Monogame game engine framework. It ut
 
 ## Features I'm Most Proud Of
 * Dynamic gameplay allows objects and their properties to be defined by players during gameplay
-* Levels are read from a file, which allows for easy
-customization/addition of new levels
+* Levels are read from a file, which allows for easy customization/addition of new levels
 * Particle systems provide tasteful effects for notable in-game events
 * Gameplay controls are customizeable from the main menu
 * All sprites are animated, giving the gameplay arena a much less stagnant feel
