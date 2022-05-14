@@ -18,5 +18,3 @@ This version was developed in C# using the Monogame game engine framework. It ut
 2. Launch the `.sln` file found in the root directory
 
 ## Gameplay Images
-![All Entities](docs/all_entities.png)
-![Level 4](docs/level4.png)
